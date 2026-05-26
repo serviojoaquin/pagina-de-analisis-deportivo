@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Analizador deportivo estadistico</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="data/mock-data.js?v=7" defer></script>
+    <script src="src/apiProviders.js?v=7" defer></script>
+    <script src="src/analyzer.js?v=7" defer></script>
+    <script src="src/app.js?v=7" defer></script>
+  </head>
+  <body data-sport="football">
+    <header class="app-header">
+      <a class="brand" href="#home" aria-label="Inicio">
+        <span class="brand-mark">A</span>
+        <span>
+          <strong>Analizador Deportivo</strong>
+          <small>Valor estadistico</small>
+        </span>
+      </a>
+      <nav class="main-nav" aria-label="Secciones">
+        <a href="#home">Home</a>
+        <a href="#analisis">Analisis</a>
+        <a href="#historial">Historial</a>
+        <a href="#responsable">Responsable</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="responsible-banner" id="responsable">
+        <div>
+          <span class="eyebrow">Juego responsable</span>
+          <p id="responsibleText">Este sistema usa datos historicos y probabilidades. No garantiza resultados. Aposta con responsabilidad.</p>
+        </div>
+        <small>No define importes, no sugiere recuperar perdidas y usa datos reales cuando el proveedor publico responde.</small>
+      </section>
+
+      <section class="home-grid" id="home">
+        <article class="panel search-panel">
+          <div class="section-heading">
+            <span class="eyebrow">Buscador de partido</span>
+            <h1>Evaluacion estadistica de mercados</h1>
+          </div>
+
+          <form id="searchForm" class="search-form">
+            <label>
+              <span>Deporte</span>
+              <select id="sportSelect"></select>
+            </label>
+            <label id="matchSelectLabel">
+              <span>Partido real disponible</span>
+              <select id="matchSelect">
+                <option value="">Cargando partidos reales...</option>
+              </select>
+            </label>
+            <label>
+              <span>Local / jugador A</span>
+              <input id="homeInput" list="participantList" autocomplete="off" placeholder="Ej: Estudiantes de La Plata">
+            </label>
+            <label>
+              <span>Visitante / jugador B</span>
+              <input id="awayInput" list="participantList" autocomplete="off" placeholder="Ej: Independiente Medellin">
+            </label>
+            <datalist id="participantList"></datalist>
+            <button class="primary-button" type="submit">Analizar mercado</button>
+          </form>
+
+          <div class="demo-row" id="demoButtons" aria-label="Demos">
+            <button type="button" data-demo="football|Estudiantes L.P.|Independiente Medellin">Partido de hoy</button>
+            <button type="button" data-demo="basketball|Los Angeles Lakers|Boston Celtics">Basquet</button>
+            <button type="button" data-demo="tennis|mateo-rios|lucas-bennett">Tenis</button>
+          </div>
+
+          <p class="status-message" id="statusMessage" data-type="neutral">Listo para analizar.</p>
+        </article>
+
+        <aside class="visual-panel" id="sportVisual" aria-label="Visual del enfrentamiento"></aside>
+      </section>
+
+      <section class="analysis-section" id="analisis">
+        <div class="empty-state" id="emptyAnalysis">
+          <span class="eyebrow">Sin analisis</span>
+          <h2>Carga un enfrentamiento para ver los mercados.</h2>
+        </div>
+
+        <div class="analysis-shell" id="analysisShell" hidden>
+          <div class="analysis-topline">
+            <div>
+              <span class="eyebrow" id="sourceBadge">Mock Odds</span>
+              <h2 id="matchTitle"></h2>
+              <p id="matchSubtitle"></p>
+            </div>
+            <button class="secondary-button" type="button" id="saveAnalysisButton">Guardar analisis</button>
+          </div>
+
+          <div class="summary-grid" id="summaryGrid"></div>
+
+          <div class="dashboard-grid" id="teamBreakdown"></div>
+
+          <article class="panel markets-panel">
+            <div class="section-heading compact">
+              <span class="eyebrow">Tabla de mercados</span>
+              <h2>Probabilidad, cuota y diferencia de valor</h2>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Mercado</th>
+                    <th>Prob. estimada</th>
+                    <th>Cuota</th>
+                    <th>Prob. implicita</th>
+                    <th>Diferencia</th>
+                    <th>Indice</th>
+                    <th>Recomendacion</th>
+                  </tr>
+                </thead>
+                <tbody id="marketsTableBody"></tbody>
+              </table>
+            </div>
+            <ul class="not-evaluated" id="notEvaluated" hidden></ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="history-section" id="historial">
+        <div class="section-heading">
+          <span class="eyebrow">Historial</span>
+          <h2>Analisis guardados</h2>
+        </div>
+        <div class="history-toolbar">
+          <button class="secondary-button" type="button" id="clearHistoryButton">Vaciar historial</button>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </section>
+
+      <section class="api-section" id="apis">
+        <article class="panel api-panel">
+          <div class="section-heading compact">
+            <span class="eyebrow">APIs reales</span>
+            <h2>Proveedor intercambiable</h2>
+          </div>
+          <div class="api-grid">
+            <div>
+              <strong>Resultados</strong>
+              <p>Mapear ultimos partidos, localia, historial directo, rachas y bajas al contrato usado por el motor.</p>
+            </div>
+            <div>
+              <strong>Cuotas</strong>
+              <p>Configurar THE_ODDS_API_KEY para cuotas reales. Sin esa clave, la app calcula mercados estadisticos sin marcar valor por cuota.</p>
+            </div>
+            <div>
+              <strong>Backend</strong>
+              <p>Guardar claves API del lado servidor y exponer endpoints propios para la interfaz.</p>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
