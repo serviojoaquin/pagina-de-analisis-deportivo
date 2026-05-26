@@ -42,6 +42,7 @@
       "teamBreakdown",
       "marketsTableBody",
       "notEvaluated",
+      "finalRecommendation",
       "saveAnalysisButton",
       "historyList",
       "clearHistoryButton",
@@ -230,6 +231,8 @@
     els.teamBreakdown.innerHTML = "";
     els.notEvaluated.innerHTML = "";
     els.notEvaluated.hidden = true;
+    els.finalRecommendation.innerHTML = "";
+    els.finalRecommendation.hidden = true;
   }
 
   function renderAnalysis(analysis) {
@@ -245,6 +248,7 @@
     renderBreakdown(analysis);
     renderMarkets(analysis);
     renderNotEvaluated(analysis);
+    renderFinalRecommendation(analysis);
   }
 
   function renderSportVisual(analysis) {
@@ -381,6 +385,79 @@
     }
     els.notEvaluated.hidden = false;
     els.notEvaluated.innerHTML = analysis.notEvaluated.map((item) => `<li>${escapeHtml(item)}</li>`).join("");
+  }
+
+  function renderFinalRecommendation(analysis) {
+    const decision = buildFinalDecision(analysis);
+    els.finalRecommendation.hidden = false;
+    els.finalRecommendation.innerHTML = `
+      <div class="section-heading compact">
+        <span class="eyebrow">Resumen final</span>
+        <h2>${escapeHtml(decision.title)}</h2>
+      </div>
+      <div class="recommendation-grid">
+        <div>
+          <strong>${escapeHtml(decision.marketLabel)}</strong>
+          <p>${escapeHtml(decision.mainText)}</p>
+        </div>
+        <div class="recommendation-metrics">
+          <span>Prob. estimada <b>${decision.market ? formatPercent(decision.market.probability) : "S/C"}</b></span>
+          <span>Cuota <b>${decision.market && decision.market.odds ? decision.market.odds.toFixed(2) : "S/C"}</b></span>
+          <span>Valor <b>${decision.market && decision.market.valueDiff !== null ? formatSignedPercent(decision.market.valueDiff) : "S/C"}</b></span>
+          <span>Indice <b>${decision.market ? Math.round(decision.market.confidence) : 0}/100</b></span>
+        </div>
+      </div>
+      <ul>
+        ${decision.reasons.map((reason) => `<li>${escapeHtml(reason)}</li>`).join("")}
+      </ul>
+      <p class="final-warning">${escapeHtml(decision.warning)}</p>
+    `;
+  }
+
+  function buildFinalDecision(analysis) {
+    const valueMarket = analysis.markets.find((market) => market.recommendation === "Posible value bet");
+    const interestingMarket = analysis.markets.find((market) => market.recommendation === "Interesante");
+    const market = valueMarket || interestingMarket || analysis.markets[0];
+    const shouldAvoid = !market || (market.recommendation !== "Posible value bet" && market.recommendation !== "Interesante");
+
+    if (shouldAvoid) {
+      return {
+        title: "No hay una apuesta clara para tomar",
+        marketLabel: market ? `Mercado mas fuerte: ${market.label}` : "Sin mercado evaluable",
+        mainText: market
+          ? `La mejor senal disponible queda como "${market.recommendation}", por eso el resumen no marca una apuesta conveniente.`
+          : "No hay suficientes datos para destacar un mercado.",
+        market,
+        reasons: market
+          ? [
+              `El indice de confianza es ${Math.round(market.confidence)}/100.`,
+              market.valueDiff === null
+                ? "No hay cuota suficiente para comparar probabilidad estimada contra probabilidad implicita."
+                : `La diferencia de valor es ${formatSignedPercent(market.valueDiff)}.`,
+              "Cuando no aparece valor estadistico claro, la decision responsable es evitar o esperar mejor informacion."
+            ]
+          : ["No se pudo calcular un mercado principal con datos suficientes."],
+        warning: "Este resumen es estadistico y no garantiza resultados. No recomienda montos ni recuperar perdidas."
+      };
+    }
+
+    return {
+      title: "Mercado a considerar",
+      marketLabel: market.label,
+      mainText: `Si decidis apostar, este es el mercado con mejor combinacion de probabilidad estimada, cuota e indice de confianza.`,
+      market,
+      reasons: [
+        `Recomendacion del modelo: ${market.recommendation}.`,
+        market.odds
+          ? `La cuota ${market.odds.toFixed(2)} implica ${formatPercent(market.impliedProbability)}, contra ${formatPercent(market.probability)} estimado por el analisis.`
+          : "No hay cuota disponible, por eso el resumen se apoya solo en la senal estadistica.",
+        market.valueDiff !== null
+          ? `La diferencia de valor es ${formatSignedPercent(market.valueDiff)}.`
+          : "Sin diferencia de valor calculable por falta de cuota.",
+        market.evidence[0] || "El mercado queda arriba por la comparacion ponderada de forma, localia, ataque, defensa, historial y bajas."
+      ],
+      warning: "Tomalo como apoyo estadistico, no como prediccion segura. Aposta con responsabilidad."
+    };
   }
 
   function saveCurrentAnalysis() {
